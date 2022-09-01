@@ -1,0 +1,373 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+
+local Window = Library.CreateLib("PRIME X DXDDY", "BloodTheme")
+
+local Tab = Window:NewTab("AIM")
+
+local Section = Tab:NewSection("AIMING")
+
+Section:NewButton("Silent aim", "CLICK C TO ENABLE", function()
+    loadstring(game:HttpGet("https://cdn.linuxcodes.xyz/Utility/shittyscriptbackupcrack.lua"))();
+
+getgenv().ToggleKey =  (  "c"  )  -- [ Toggle On And Off | Stop asking re-tarded questions ]
+
+getgenv().Prediction =  (  0.09 )   -- [ Lower Prediction: Lower Ping | Higher Prediction: Higher Ping  ]
+
+getgenv().FOV =  (  100  )   -- [ Increases Or Decreases FOV Radius ]
+
+getgenv().FOV_Visible = false -- [ True or False, same for below ]
+
+getgenv().TargetAim_Visible = true -- [ Shows The Dot Or Disables It ]
+
+getgenv().FIXCrossHair = true -- [ Attempts to Fix the crosshair-placement when you toggle silent-aim, you will want to leave this on true ]
+
+getgenv().DontShootMyFriends = false -- [ True or False ]
+
+getgenv().DontShootThesePeople = {  -- [ List Of Who Not To Shoot like this. "Quotations with their name and then a comma afterwards for each line"; ]
+    "Player1";
+    "Player2";
+};
+end)
+
+Section:NewButton("CAMLOCK", "PRESS Q TO ENBALE AND UNENABLE", function()
+    getgenv().Prediction = 0.12167
+getgenv().AimPart = "HumanoidRootPart"	
+getgenv().Key = "Q"	
+getgenv().DisableKey = "P"	
+	
+getgenv().FOV = true	
+getgenv().ShowFOV = false	
+getgenv().FOVSize = 55	
+	
+--// Variables (Service)	
+	
+local Players = game:GetService("Players")	
+local RS = game:GetService("RunService")	
+local WS = game:GetService("Workspace")	
+local GS = game:GetService("GuiService")	
+local SG = game:GetService("StarterGui")	
+	
+--// Variables (regular)	
+	
+local LP = Players.LocalPlayer	
+local Mouse = LP:GetMouse()	
+local Camera = WS.CurrentCamera	
+local GetGuiInset = GS.GetGuiInset	
+	
+local AimlockState = true	
+local Locked	
+local Victim	
+	
+local SelectedKey = getgenv().Key	
+local SelectedDisableKey = getgenv().DisableKey	
+	
+--// Notification function	
+	
+function Notify(tx)	
+    SG:SetCore("SendNotification", {	
+        Title = "DXDDY LOADED",	
+        Text = tx,	
+Duration = 5	
+    })	
+end	
+	
+--// Check if aimlock is loaded	
+	
+if getgenv().Loaded == true then	
+    Notify("Aimlock is already loaded!")	
+    return	
+end	
+	
+getgenv().Loaded = true	
+	
+--// FOV Circle	
+	
+local fov = Drawing.new("Circle")	
+fov.Filled = false	
+fov.Transparency = 1	
+fov.Thickness = 1	
+fov.Color = Color3.fromRGB(255, 255, 0)	
+fov.NumSides = 1000	
+	
+--// Functions	
+	
+function update()	
+    if getgenv().FOV == true then	
+        if fov then	
+fov.Radius = getgenv().FOVSize * 2	
+            fov.Visible = getgenv().ShowFOV	
+fov.Position = Vector2.new(Mouse.X, Mouse.Y + GetGuiInset(GS).Y)	
+	
+            return fov	
+        end	
+    end	
+end	
+	
+function WTVP(arg)	
+    return Camera:WorldToViewportPoint(arg)	
+end	
+	
+function WTSP(arg)	
+    return Camera.WorldToScreenPoint(Camera, arg)	
+end	
+	
+function getClosest()	
+    local closestPlayer	
+    local shortestDistance = math.huge	
+	
+    for i, v in pairs(game.Players:GetPlayers()) do	
+        local notKO = v.Character:WaitForChild("BodyEffects")["K.O"].Value ~= true	
+        local notGrabbed = v.Character:FindFirstChild("GRABBING_COINSTRAINT") == nil	
+        	
+if v ~= game.Players.LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health ~= 0 and v.Character:FindFirstChild(getgenv().AimPart) and notKO and notGrabbed then	
+            local pos = Camera:WorldToViewportPoint(v.Character.PrimaryPart.Position)	
+local magnitude = (Vector2.new(pos.X, pos.Y) - Vector2.new(Mouse.X, Mouse.Y)).magnitude	
+            	
+            if (getgenv().FOV) then	
+                if (fov.Radius > magnitude and magnitude < shortestDistance) then	
+                    closestPlayer = v	
+                    shortestDistance = magnitude	
+                end	
+            else	
+                if (magnitude < shortestDistance) then	
+                    closestPlayer = v	
+                    shortestDistance = magnitude	
+                end	
+            end	
+        end	
+    end	
+    return closestPlayer	
+end	
+	
+--// Checks if key is down	
+	
+Mouse.KeyDown:Connect(function(k)	
+    SelectedKey = SelectedKey:lower()	
+    SelectedDisableKey = SelectedDisableKey:lower()	
+    if k == SelectedKey then	
+        if AimlockState == true then	
+            Locked = not Locked	
+            if Locked then	
+                Victim = getClosest()	
+	
+                Notify("Locked onto: "..tostring(Victim.Character.Humanoid.DisplayName))	
+            else	
+                if Victim ~= nil then	
+                    Victim = nil	
+	
+                    Notify("Unlocked!")	
+                end	
+            end	
+        else	
+            Notify("Aimlock is not enabled!")	
+        end	
+    end	
+    if k == SelectedDisableKey then	
+        AimlockState = not AimlockState	
+    end	
+end)	
+	
+--// Loop update FOV and loop camera lock onto target	
+	
+RS.RenderStepped:Connect(function()	
+    update()	
+    if AimlockState == true then	
+        if Victim ~= nil then	
+            Camera.CFrame = CFrame.new(Camera.CFrame.p, Victim.Character[getgenv().AimPart].Position + Victim.Character[getgenv().AimPart].Velocity*getgenv().Prediction)	
+        end	
+    end	
+end)	
+	while wait() do
+        if getgenv().AutoPrediction == true then	
+        local pingvalue = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValueString()	
+        local split = string.split(pingvalue,'(')	
+local ping = tonumber(split[1])	
+if ping < 225 then	
+getgenv().Prediction = 1.4	
+elseif ping < 215 then	
+getgenv().Prediction = 1.2	
+	elseif ping < 205 then
+getgenv().Prediction = 1.0	
+	elseif ping < 190 then
+getgenv().Prediction = 0.10	
+elseif ping < 180 then	
+getgenv().Prediction = 0.12	
+	elseif ping < 170 then
+getgenv().Prediction = 0.15	
+	elseif ping < 160 then
+getgenv().Prediction = 0.18	
+	elseif ping < 150 then
+getgenv().Prediction = 0.110	
+elseif ping < 140 then	
+getgenv().Prediction = 0.113	
+elseif ping < 130 then	
+getgenv().Prediction = 0.116	
+elseif ping < 120 then	
+getgenv().Prediction = 0.120	
+elseif ping < 110 then	
+getgenv().Prediction = 0.124	
+elseif ping < 105 then	
+getgenv().Prediction = 0.127	
+elseif ping < 90 then	
+getgenv().Prediction = 0.130	
+elseif ping < 80 then	
+getgenv().Prediction = 0.133	
+elseif ping < 70 then	
+getgenv().Prediction = 0.136	
+elseif ping < 60 then	
+getgenv().Prediction = 0.140	
+elseif ping < 50 then	
+getgenv().Prediction = 0.143	
+elseif ping < 40 then	
+getgenv().Prediction = 0.145	
+elseif ping < 30 then	
+getgenv().Prediction = 0.155	
+elseif ping < 20 then	
+getgenv().Prediction = 0.157	
+        end	
+        end	
+	end
+end)
+
+
+local Tab = Window:NewTab("MISC")
+
+local Section = Tab:NewSection("MISC")
+
+Section:NewButton("desync", "stand still and Press x he wont be abe to hit u", function()
+    local P1000ToggleKey = "x" -- Change that to whatever keybind: "t"
+
+
+--[[
+
+	Standing still will trick the hitbox, you won't be able to get hit.
+
+
+	DO NOT EDIT BEYOND THIS POINT IF YOU DON'T UNDERSTAND WHAT IS GOING ON.
+	
+	ORIGINAL SOURCE PUT INTO SKID FRIENDLY FORMAT TAKE WHAT YOU LIKE AND MAKE MANY MORE OBLIVITIES CLONES WITH THIS OR EVEN YOUR VERY OWN DIY OBLIVITY!
+	
+	AND REMEMBER TO SAY, SO LOOOOONG OBLIVITYYYYYY!!!
+
+
+--]]
+
+
+--// Services
+checkcaller = checkcaller
+newcclosure = newcclosure
+hookmetamethod = hookmetamethod
+
+local PastedSources = false
+local BruhXD = game:GetService("RunService")
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local Bullshit = LocalPlayer:GetMouse()
+
+
+--// Toggles
+Bullshit.KeyDown:Connect(function(SayNoToOblivity)
+	if SayNoToOblivity == string.lower(P1000ToggleKey) then
+		pcall(function()
+			if PastedSources == false then
+				PastedSources = true
+				print("Enabled P1000")
+			elseif PastedSources == true then
+				PastedSources = false
+				print("Disabled P1000")
+			end
+		end)
+	end
+end)
+
+Bullshit.KeyDown:Connect(function(SayNoToOblivity)
+	if SayNoToOblivity == ("=") then
+		game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer) 
+	end
+end)
+
+
+--// Desync_Source
+function RandomNumberRange(a)
+	return math.random(-a * 100, a * 100) / 100
+end
+
+function RandomVectorRange(a, b, c)
+	return Vector3.new(RandomNumberRange(a), RandomNumberRange(b), RandomNumberRange(c))
+end
+
+
+local DesyncTypes = {}
+BruhXD.Heartbeat:Connect(function()
+	if PastedSources == true then
+		DesyncTypes[1] = LocalPlayer.Character.HumanoidRootPart.CFrame
+		DesyncTypes[2] = LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity
+
+		local SpoofThis = LocalPlayer.Character.HumanoidRootPart.CFrame
+
+		SpoofThis = SpoofThis * CFrame.new(Vector3.new(0, 0, 0))
+		SpoofThis = SpoofThis * CFrame.Angles(math.rad(RandomNumberRange(180)), math.rad(RandomNumberRange(180)), math.rad(RandomNumberRange(180)))
+
+		LocalPlayer.Character.HumanoidRootPart.CFrame = SpoofThis
+
+		LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(1, 1, 1) * 16384
+
+		BruhXD.RenderStepped:Wait()
+
+		LocalPlayer.Character.HumanoidRootPart.CFrame = DesyncTypes[1]
+		LocalPlayer.Character.HumanoidRootPart.AssemblyLinearVelocity = DesyncTypes[2]
+	end
+end)
+
+
+--// Hook_CFrame
+local XDDDDDD = nil
+XDDDDDD = hookmetamethod(game, "__index", newcclosure(function(self, key)
+	if PastedSources == true then
+		if not checkcaller() then
+			if key == "CFrame" and PastedSources == true and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character:FindFirstChild("Humanoid").Health > 0 then
+				if self == LocalPlayer.Character.HumanoidRootPart then
+					return DesyncTypes[1] or CFrame.new()
+				elseif self == LocalPlayer.Character.Head then
+					return DesyncTypes[1] and DesyncTypes[1] + Vector3.new(0, LocalPlayer.Character.HumanoidRootPart.Size / 2 + 0.5, 0) or CFrame.new()
+				end
+			end
+		end
+	end
+	return XDDDDDD(self, key)
+end))
+end)
+
+Section:NewButton("UNDERGROU aa", "X to enable", function()
+    local Toggled = false
+local KeyCode = 'x'
+
+
+function AA()
+    local oldVelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
+    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -70, oldVelocity.Z)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, oldVelocity.Y, oldVelocity.Z)
+    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -70, oldVelocity.Z)
+    game.Players.LocalPlayer.Character.Humanoid.HipHeight = 4.14
+end
+
+game:GetService('UserInputService').InputBegan:Connect(function(Key)
+    if Key.KeyCode == Enum.KeyCode[KeyCode:upper()] and not game:GetService('UserInputService'):GetFocusedTextBox() then
+        if Toggled then
+            Toggled = false
+            game.Players.LocalPlayer.Character.Humanoid.HipHeight = 1.85
+
+        elseif not Toggled then
+            Toggled = true
+
+            while Toggled do
+                AA()
+                task.wait()
+            end
+        end
+    end
+end)
+end)
+
+Section:NewKeybind("Open and close Gui", "Use a key and Press it open and close", Enum.KeyCode.F, function()
+	Library:ToggleUI()
+end)
